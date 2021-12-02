@@ -1,33 +1,16 @@
-use eyre::{bail, eyre, Context};
-use std::str::FromStr;
+use eyre::eyre;
+use nom::{
+    branch::alt,
+    bytes::complete::tag,
+    character::complete::{space1, u32},
+    Finish, IResult,
+};
 
 #[derive(Copy, Clone)]
 enum Command {
     Forward(u32),
     Down(u32),
     Up(u32),
-}
-
-impl FromStr for Command {
-    type Err = eyre::Report;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut parts = s.split_whitespace();
-        let tag = parts.next().ok_or_else(|| eyre!("no command"))?;
-        let amount: u32 = parts
-            .next()
-            .ok_or_else(|| eyre!("no amount"))
-            .and_then(|value| value.parse().context("unable to parse amount"))?;
-
-        let command = match tag {
-            "forward" => Command::Forward(amount),
-            "down" => Command::Down(amount),
-            "up" => Command::Up(amount),
-            _ => bail!("unable to construct command"),
-        };
-
-        Ok(command)
-    }
 }
 
 #[derive(Default)]
@@ -37,9 +20,32 @@ struct State {
     aim: u32,
 }
 
+fn parse_command(input: &str) -> IResult<&str, Command> {
+    let (input, tag) = alt((tag("forward"), tag("down"), tag("up")))(input)?;
+    let (input, _) = space1(input)?;
+    let (input, amount) = u32(input)?;
+    let command = match tag {
+        "forward" => Command::Forward(amount),
+        "down" => Command::Down(amount),
+        "up" => Command::Up(amount),
+        _ => unreachable!(),
+    };
+
+    Ok((input, command))
+}
+
 #[aoc_generator(day2)]
-fn generator(input: &str) -> Vec<Command> {
-    input.lines().map(str::parse).map(Result::unwrap).collect()
+fn generator(input: &str) -> eyre::Result<Vec<Command>> {
+    let commands = input
+        .lines()
+        .map(|line| {
+            parse_command(line)
+                .finish()
+                .map(|(_, command)| command)
+                .map_err(|e| eyre!("failed to parse line: {:?}", e))
+        })
+        .collect::<eyre::Result<_>>()?;
+    Ok(commands)
 }
 
 #[aoc(day2, part1)]

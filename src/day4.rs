@@ -1,14 +1,19 @@
 use std::{collections::HashSet, num::ParseIntError};
 
-#[derive(Debug, Clone)]
 struct Input {
     numbers: Vec<u32>,
     boards: Vec<Board>,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Default)]
 struct Board {
     rows: Vec<Vec<u32>>,
+}
+
+#[derive(Default)]
+struct Game {
+    called_numbers: HashSet<u32>,
+    winners: HashSet<usize>,
 }
 
 impl Board {
@@ -62,44 +67,38 @@ fn generator(input: &str) -> Result<Input, ParseIntError> {
     Ok(Input { numbers, boards })
 }
 
+fn game_stream(input: &Input) -> impl Iterator<Item = u32> + '_ {
+    input
+        .numbers
+        .iter()
+        .scan(Game::default(), |game, &number| {
+            game.called_numbers.insert(number);
+
+            let round_winners = input
+                .boards
+                .iter()
+                .enumerate()
+                .filter(|(board_index, _)| !game.winners.contains(board_index))
+                .filter(|(_, board)| board.is_winner(&game.called_numbers))
+                .map(|(board_index, _)| board_index)
+                .collect::<Vec<usize>>();
+            game.winners.extend(&round_winners);
+
+            let scores = round_winners
+                .into_iter()
+                .map(|board_index| number * input.boards[board_index].score(&game.called_numbers))
+                .collect::<Vec<u32>>();
+            Some(scores)
+        })
+        .flatten()
+}
+
 #[aoc(day4, part1)]
-fn part1(input: &Input) -> u32 {
-    let mut called_numbers = HashSet::new();
-    for &number in &input.numbers {
-        called_numbers.insert(number);
-
-        let winner = input.boards.iter().find(|b| b.is_winner(&called_numbers));
-        if let Some(w) = winner {
-            return w.score(&called_numbers) * number;
-        }
-    }
-
-    unreachable!()
+fn part1(input: &Input) -> Option<u32> {
+    game_stream(input).next()
 }
 
 #[aoc(day4, part2)]
-fn part2(input: &Input) -> u32 {
-    let mut called_numbers = HashSet::new();
-    let mut winners = vec![];
-    let mut skip = HashSet::new();
-    for (round, &number) in input.numbers.iter().enumerate() {
-        called_numbers.insert(number);
-
-        let round_winners = input
-            .boards
-            .iter()
-            .enumerate()
-            .filter(|(board_index, _)| !skip.contains(board_index))
-            .filter(|(_, board)| board.is_winner(&called_numbers))
-            .map(|(board_index, _)| (round, board_index))
-            .collect::<Vec<(usize, usize)>>();
-        winners.extend_from_slice(&round_winners);
-        for (_, board_index) in round_winners {
-            skip.insert(board_index);
-        }
-    }
-
-    let &(round, board_index) = winners.last().unwrap();
-    let called_numbers = input.numbers.iter().take(round + 1).copied().collect();
-    input.boards[board_index].score(&called_numbers) * input.numbers[round]
+fn part2(input: &Input) -> Option<u32> {
+    game_stream(input).last()
 }

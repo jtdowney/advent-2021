@@ -71,7 +71,7 @@ fn part2(input: &[String]) -> eyre::Result<u32> {
     let generator = u32::from_str_radix(&generator, 2)?;
 
     let scrubber = (0..)
-        .try_fold(input.clone(), |mut candidates, digit| {
+        .try_fold(input, |mut candidates, digit| {
             if candidates.len() == 1 {
                 let value = candidates[0].iter().collect::<String>();
                 return Err(value);

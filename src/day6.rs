@@ -1,9 +1,7 @@
 use eyre::eyre;
-use itertools::Itertools;
-use std::collections::HashMap;
 
 #[aoc_generator(day6)]
-fn generator(input: &str) -> eyre::Result<Vec<i8>> {
+fn generator(input: &str) -> eyre::Result<Vec<usize>> {
     input
         .lines()
         .next()
@@ -13,33 +11,37 @@ fn generator(input: &str) -> eyre::Result<Vec<i8>> {
         .collect()
 }
 
-fn solve(input: &[i8], rounds: usize) -> usize {
-    let mut population = input.iter().copied().counts();
+fn solve(input: &[usize], rounds: usize) -> usize {
+    let mut population = input.iter().fold([0; 9], |mut acc, &cycle| {
+        acc[cycle as usize] += 1;
+        acc
+    });
+
     for _ in 0..rounds {
-        let mut next = HashMap::new();
-        for (&cycle, &count) in population.iter() {
-            let mut cycle = cycle - 1;
+        let mut next = [0; 9];
+        for (cycle, &count) in population.iter().enumerate() {
+            let cycle = if cycle == 0 {
+                next[8] += count;
+                6
+            } else {
+                cycle - 1
+            };
 
-            if cycle < 0 {
-                cycle = 6;
-                *next.entry(8).or_default() += count;
-            }
-
-            *next.entry(cycle).or_default() += count;
+            next[cycle] += count;
         }
 
         population = next;
     }
 
-    population.values().sum()
+    population.iter().sum()
 }
 
 #[aoc(day6, part1)]
-fn part1(input: &[i8]) -> usize {
+fn part1(input: &[usize]) -> usize {
     solve(input, 80)
 }
 
 #[aoc(day6, part2)]
-fn part2(input: &[i8]) -> usize {
+fn part2(input: &[usize]) -> usize {
     solve(input, 256)
 }

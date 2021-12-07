@@ -38,6 +38,6 @@ fn part1(input: &[i32]) -> Option<i32> {
 fn part2(input: &[i32]) -> Option<i32> {
     solve(input, |destination, position| {
         let steps = (position - destination).abs();
-        (1..=steps).sum::<i32>()
+        steps * (steps + 1) / 2
     })
 }

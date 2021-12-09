@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet};
 
 type Point = (i16, i16);
 
@@ -34,10 +34,9 @@ fn low_points(input: &HashMap<Point, u16>) -> impl Iterator<Item = Point> + '_ {
 
 fn basin_size(start: Point, input: &HashMap<Point, u16>) -> usize {
     let mut visited = HashSet::new();
-    let mut search = VecDeque::new();
-    search.push_back(start);
+    let mut search = vec![start];
 
-    while let Some(point) = search.pop_front() {
+    while let Some(point) = search.pop() {
         visited.insert(point);
 
         let basin_neighbors = neighbors(point).filter(|neighbor| {

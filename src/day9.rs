@@ -40,14 +40,10 @@ fn basin_size(start: Point, input: &HashMap<Point, u16>) -> usize {
         visited.insert(point);
 
         let basin_neighbors = neighbors(point).filter(|neighbor| {
-            if visited.contains(neighbor) {
-                return false;
-            }
-
-            if let Some(&height) = input.get(neighbor) {
-                height < 9
-            } else {
-                false
+            match (visited.contains(neighbor), input.get(neighbor)) {
+                (true, _) => false,
+                (_, Some(&h)) => h < 9,
+                _ => false,
             }
         });
 

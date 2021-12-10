@@ -5,11 +5,6 @@ fn generator(input: &str) -> Vec<String> {
 
 fn check_syntax(line: &str) -> Result<Vec<char>, char> {
     line.chars().try_fold(vec![], |mut queue, c| {
-        if queue.last().is_none() {
-            queue.push(c);
-            return Ok(queue);
-        }
-
         match (c, queue.last()) {
             ('(' | '[' | '{' | '<', _) => queue.push(c),
             (')', Some('(')) | (']', Some('[')) | ('}', Some('{')) | ('>', Some('<')) => {

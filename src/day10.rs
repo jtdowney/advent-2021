@@ -1,15 +1,10 @@
-enum Syntax {
-    Corrupt(char),
-    Incomplete(Vec<char>),
-}
-
 #[aoc_generator(day10)]
 fn generator(input: &str) -> Vec<String> {
     input.lines().map(String::from).collect()
 }
 
-fn check_syntax(line: &str) -> Syntax {
-    let queue = line.chars().try_fold(vec![], |mut queue, c| {
+fn check_syntax(line: &str) -> Result<Vec<char>, char> {
+    line.chars().try_fold(vec![], |mut queue, c| {
         if queue.last().is_none() {
             queue.push(c);
             return Ok(queue);
@@ -24,12 +19,7 @@ fn check_syntax(line: &str) -> Syntax {
         }
 
         Ok(queue)
-    });
-
-    match queue {
-        Ok(queue) => Syntax::Incomplete(queue),
-        Err(c) => Syntax::Corrupt(c),
-    }
+    })
 }
 
 #[aoc(day10, part1)]
@@ -37,8 +27,8 @@ fn part1(input: &[String]) -> usize {
     input
         .iter()
         .filter_map(|line| match check_syntax(line) {
-            Syntax::Corrupt(c) => Some(c),
-            Syntax::Incomplete(_) => None,
+            Ok(_) => None,
+            Err(c) => Some(c),
         })
         .map(|c| match c {
             ')' => 3,
@@ -54,10 +44,7 @@ fn part1(input: &[String]) -> usize {
 fn part2(input: &[String]) -> usize {
     let mut scores = input
         .iter()
-        .filter_map(|line| match check_syntax(line) {
-            Syntax::Corrupt(_) => None,
-            Syntax::Incomplete(q) => Some(q),
-        })
+        .filter_map(|line| check_syntax(line).ok())
         .map(|queue| {
             queue
                 .iter()
@@ -67,7 +54,7 @@ fn part2(input: &[String]) -> usize {
                     '[' => 2,
                     '{' => 3,
                     '<' => 4,
-                    _ => panic!("found {}", c),
+                    _ => unreachable!(),
                 })
                 .fold(0, |acc, score| acc * 5 + score)
         })

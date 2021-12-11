@@ -18,7 +18,7 @@ fn check_syntax(line: &str) -> Result<Vec<char>, char> {
 }
 
 #[aoc(day10, part1)]
-fn part1(input: &[String]) -> usize {
+fn part1(input: &[String]) -> u64 {
     input
         .iter()
         .filter_map(|line| match check_syntax(line) {
@@ -36,7 +36,7 @@ fn part1(input: &[String]) -> usize {
 }
 
 #[aoc(day10, part2)]
-fn part2(input: &[String]) -> usize {
+fn part2(input: &[String]) -> u64 {
     let mut scores = input
         .iter()
         .filter_map(|line| check_syntax(line).ok())
@@ -53,7 +53,7 @@ fn part2(input: &[String]) -> usize {
                 })
                 .fold(0, |acc, score| acc * 5 + score)
         })
-        .collect::<Vec<usize>>();
+        .collect::<Vec<_>>();
 
     scores.sort_unstable();
     scores[scores.len() / 2]

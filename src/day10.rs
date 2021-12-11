@@ -4,16 +4,16 @@ fn generator(input: &str) -> Vec<String> {
 }
 
 fn check_syntax(line: &str) -> Result<Vec<char>, char> {
-    line.chars().try_fold(vec![], |mut queue, c| {
-        match (c, queue.last()) {
-            ('(' | '[' | '{' | '<', _) => queue.push(c),
+    line.chars().try_fold(vec![], |mut stack, c| {
+        match (c, stack.last()) {
+            ('(' | '[' | '{' | '<', _) => stack.push(c),
             (')', Some('(')) | (']', Some('[')) | ('}', Some('{')) | ('>', Some('<')) => {
-                queue.pop();
+                stack.pop();
             }
             _ => return Err(c),
         }
 
-        Ok(queue)
+        Ok(stack)
     })
 }
 
@@ -40,8 +40,8 @@ fn part2(input: &[String]) -> usize {
     let mut scores = input
         .iter()
         .filter_map(|line| check_syntax(line).ok())
-        .map(|queue| {
-            queue
+        .map(|stack| {
+            stack
                 .iter()
                 .rev()
                 .map(|&c| match c {

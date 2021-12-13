@@ -1,6 +1,8 @@
+use std::num::ParseIntError;
+
 #[aoc_generator(day1)]
-fn generator(input: &str) -> Vec<u32> {
-    input.lines().map(str::parse).map(Result::unwrap).collect()
+fn generator(input: &str) -> Result<Vec<u32>, ParseIntError> {
+    input.lines().map(str::parse).collect()
 }
 
 #[aoc(day1, part1)]

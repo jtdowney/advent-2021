@@ -1,4 +1,4 @@
-use eyre::{bail, eyre};
+use eyre::{bail, ContextCompat};
 use std::{collections::HashSet, fmt::Write};
 
 type Point = (i16, i16);
@@ -21,9 +21,7 @@ fn generator(input: &str) -> eyre::Result<Input> {
         .lines()
         .take_while(|line| !line.is_empty())
         .map(|line| {
-            let (x, y) = line
-                .split_once(',')
-                .ok_or_else(|| eyre!("unable to split point"))?;
+            let (x, y) = line.split_once(',').context("unable to split point")?;
             let x = x.parse()?;
             let y = y.parse()?;
 
@@ -35,9 +33,7 @@ fn generator(input: &str) -> eyre::Result<Input> {
         .lines()
         .skip(points.len() + 1)
         .map(|line| {
-            let (instruction, position) = line
-                .split_once('=')
-                .ok_or_else(|| eyre!("unable to split fold"))?;
+            let (instruction, position) = line.split_once('=').context("unable to split fold")?;
             let position = position.parse()?;
 
             let fold = match instruction {
@@ -86,24 +82,22 @@ fn solve(input: &Input) -> impl Iterator<Item = HashSet<(i16, i16)>> + '_ {
 fn part1(input: &Input) -> eyre::Result<usize> {
     Ok(solve(input)
         .next()
-        .ok_or_else(|| eyre!("unable to find solution"))?
+        .context("unable to find solution")?
         .len())
 }
 
 #[aoc(day13, part2)]
 fn part2(input: &Input) -> eyre::Result<String> {
-    let points = solve(input)
-        .last()
-        .ok_or_else(|| eyre!("unable to find solution"))?;
+    let points = solve(input).last().context("unable to find solution")?;
 
     let &(maxx, _) = points
         .iter()
         .max_by_key(|(x, _)| x)
-        .ok_or_else(|| eyre!("unable to find max x"))?;
+        .context("unable to find max x")?;
     let &(_, maxy) = points
         .iter()
         .max_by_key(|(_, y)| y)
-        .ok_or_else(|| eyre!("unable to find max y"))?;
+        .context("unable to find max y")?;
 
     let mut buffer = String::new();
     writeln!(buffer)?;

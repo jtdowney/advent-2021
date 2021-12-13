@@ -1,4 +1,4 @@
-use eyre::eyre;
+use eyre::ContextCompat;
 use std::collections::HashMap;
 
 type Point = (i16, i16);
@@ -9,15 +9,13 @@ fn generator(input: &str) -> eyre::Result<Vec<Line>> {
     input
         .lines()
         .map(|line| {
-            let (left, right) = line
-                .split_once(" -> ")
-                .ok_or_else(|| eyre!("unable to split line"))?;
+            let (left, right) = line.split_once(" -> ").context("unable to split line")?;
             let (x1, y1) = left
                 .split_once(',')
-                .ok_or_else(|| eyre!("unable to split left points"))?;
+                .context("unable to split left points")?;
             let (x2, y2) = right
                 .split_once(',')
-                .ok_or_else(|| eyre!("unable to split right points"))?;
+                .context("unable to split right points")?;
 
             let x1 = x1.parse()?;
             let y1 = y1.parse()?;

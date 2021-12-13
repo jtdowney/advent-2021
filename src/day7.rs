@@ -1,4 +1,4 @@
-use eyre::eyre;
+use eyre::{eyre, ContextCompat};
 use itertools::Itertools;
 
 #[aoc_generator(day7)]
@@ -6,7 +6,7 @@ fn generator(input: &str) -> eyre::Result<Vec<i32>> {
     input
         .lines()
         .next()
-        .ok_or_else(|| eyre!("unable to read input"))?
+        .context("unable to read input")?
         .split(',')
         .map(|value| value.parse().map_err(|_| eyre!("unable to parse number")))
         .collect()

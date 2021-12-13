@@ -1,4 +1,4 @@
-use eyre::{bail, eyre, Context};
+use eyre::{bail, Context, ContextCompat};
 use std::str::FromStr;
 
 #[derive(Copy, Clone)]
@@ -13,10 +13,10 @@ impl FromStr for Command {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut parts = s.split_whitespace();
-        let tag = parts.next().ok_or_else(|| eyre!("no command"))?;
+        let tag = parts.next().context("no command")?;
         let amount: u32 = parts
             .next()
-            .ok_or_else(|| eyre!("no amount"))
+            .context("no amount")
             .and_then(|value| value.parse().context("unable to parse amount"))?;
 
         let command = match tag {
@@ -38,8 +38,8 @@ struct State {
 }
 
 #[aoc_generator(day2)]
-fn generator(input: &str) -> Vec<Command> {
-    input.lines().map(str::parse).map(Result::unwrap).collect()
+fn generator(input: &str) -> eyre::Result<Vec<Command>> {
+    input.lines().map(str::parse).collect()
 }
 
 #[aoc(day2, part1)]

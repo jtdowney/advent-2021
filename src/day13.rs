@@ -2,8 +2,9 @@ use eyre::{bail, ContextCompat};
 use std::{collections::HashSet, fmt::Write};
 
 type Point = (i16, i16);
+type Paper = HashSet<Point>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum Fold {
     Up(i16),
     Left(i16),
@@ -11,13 +12,13 @@ enum Fold {
 
 #[derive(Debug)]
 struct Input {
-    points: HashSet<Point>,
+    paper: Paper,
     folds: Vec<Fold>,
 }
 
 #[aoc_generator(day13)]
 fn generator(input: &str) -> eyre::Result<Input> {
-    let points = input
+    let paper = input
         .lines()
         .take_while(|line| !line.is_empty())
         .map(|line| {
@@ -27,11 +28,11 @@ fn generator(input: &str) -> eyre::Result<Input> {
 
             Ok((x, y))
         })
-        .collect::<eyre::Result<HashSet<Point>>>()?;
+        .collect::<eyre::Result<Paper>>()?;
 
     let folds = input
         .lines()
-        .skip(points.len() + 1)
+        .skip(paper.len() + 1)
         .map(|line| {
             let (instruction, position) = line.split_once('=').context("unable to split fold")?;
             let position = position.parse()?;
@@ -46,34 +47,24 @@ fn generator(input: &str) -> eyre::Result<Input> {
         })
         .collect::<eyre::Result<Vec<Fold>>>()?;
 
-    Ok(Input { points, folds })
+    Ok(Input { paper, folds })
 }
 
-fn solve(input: &Input) -> impl Iterator<Item = HashSet<(i16, i16)>> + '_ {
+fn solve(input: &Input) -> impl Iterator<Item = Paper> + '_ {
     input
         .folds
         .iter()
-        .scan(input.points.clone(), |points, fold| {
-            let (inside, outside) =
-                points
-                    .iter()
-                    .partition::<HashSet<Point>, _>(|(x, y)| match fold {
-                        Fold::Up(fy) => fy > y,
-                        Fold::Left(fx) => fx > x,
-                    });
+        .scan(input.paper.clone(), |paper, &fold| {
+            let next = paper
+                .iter()
+                .map(|&(x, y)| match fold {
+                    Fold::Left(fx) if fx < x => (-(x - fx - fx), y),
+                    Fold::Up(fy) if fy < y => (x, -(y - fy - fy)),
+                    _ => (x, y),
+                })
+                .collect::<Paper>();
 
-            let next: HashSet<Point> = match fold {
-                Fold::Up(fy) => inside
-                    .into_iter()
-                    .chain(outside.into_iter().map(|(x, y)| (x, -(y - 2 * fy))))
-                    .collect(),
-                Fold::Left(fx) => inside
-                    .into_iter()
-                    .chain(outside.into_iter().map(|(x, y)| (-(x - 2 * fx), y)))
-                    .collect(),
-            };
-
-            *points = next.clone();
+            *paper = next.clone();
             Some(next)
         })
 }
@@ -88,13 +79,13 @@ fn part1(input: &Input) -> eyre::Result<usize> {
 
 #[aoc(day13, part2)]
 fn part2(input: &Input) -> eyre::Result<String> {
-    let points = solve(input).last().context("unable to find solution")?;
+    let paper = solve(input).last().context("unable to find solution")?;
 
-    let &(maxx, _) = points
+    let &(maxx, _) = paper
         .iter()
         .max_by_key(|(x, _)| x)
         .context("unable to find max x")?;
-    let &(_, maxy) = points
+    let &(_, maxy) = paper
         .iter()
         .max_by_key(|(_, y)| y)
         .context("unable to find max y")?;
@@ -103,7 +94,7 @@ fn part2(input: &Input) -> eyre::Result<String> {
     writeln!(buffer)?;
     for y in 0..=maxy {
         for x in 0..=maxx {
-            if points.contains(&(x, y)) {
+            if paper.contains(&(x, y)) {
                 write!(buffer, "#")?;
             } else {
                 write!(buffer, ".")?;

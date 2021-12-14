@@ -29,54 +29,37 @@ fn find_segments(input: &[Numeral]) -> Option<[Numeral; 10]> {
     known[7] = input.iter().find(|candidate| candidate.len() == 3)?.clone();
     known[8] = input.iter().find(|candidate| candidate.len() == 7)?.clone();
 
-    let top = known[7].difference(&known[1]).copied().collect::<Numeral>();
+    let top = known[7].difference(&known[1]).copied().collect();
     let bottom_and_bottom_left = known[8]
         .difference(&known[4])
         .copied()
         .collect::<Numeral>()
         .difference(&top)
         .copied()
-        .collect::<Numeral>();
+        .collect();
 
-    let partial9 = known[4].union(&top).copied().collect::<Numeral>();
+    let partial9 = &known[4] | &top;
     known[9] = input
         .iter()
-        .find(|&candidate| {
-            candidate != &known[8]
-                && candidate
-                    .intersection(&partial9)
-                    .copied()
-                    .collect::<Numeral>()
-                    == partial9
-        })?
+        .find(|&candidate| candidate != &known[8] && candidate & &partial9 == partial9)?
         .clone();
 
-    let partial0 = bottom_and_bottom_left
-        .union(&known[1])
-        .copied()
-        .collect::<Numeral>();
+    let partial0 = &bottom_and_bottom_left | &known[1];
     known[0] = input
         .iter()
-        .find(|&candidate| {
-            candidate != &known[8]
-                && candidate
-                    .intersection(&partial0)
-                    .copied()
-                    .collect::<Numeral>()
-                    == partial0
-        })?
+        .find(|&candidate| candidate != &known[8] && candidate & &partial0 == partial0)?
         .clone();
 
-    let middle = known[9].difference(&known[0]).copied().collect::<Numeral>();
+    let middle = known[9].difference(&known[0]).copied().collect();
     let top_left = known[4]
         .difference(&known[1])
         .copied()
         .collect::<Numeral>()
         .difference(&middle)
         .copied()
-        .collect::<Numeral>();
+        .collect();
 
-    known[3] = known[9].difference(&top_left).copied().collect::<Numeral>();
+    known[3] = known[9].difference(&top_left).copied().collect();
     known[6] = input
         .iter()
         .find(|&candidate| {

@@ -37,20 +37,24 @@ fn generator(input: &str) -> eyre::Result<Input> {
 }
 
 fn count_pairs(template: &[char]) -> HashMap<Pair, u64> {
-    template.windows(2).fold(HashMap::new(), |mut acc, parts| {
-        let pair = (parts[0], parts[1]);
-        *acc.entry(pair).or_default() += 1;
-        acc
-    })
+    template.windows(2).fold(
+        HashMap::with_capacity(template.len() * 2),
+        |mut acc, parts| {
+            let pair = (parts[0], parts[1]);
+            *acc.entry(pair).or_default() += 1;
+            acc
+        },
+    )
 }
 
 fn count_elements(polymer: &HashMap<Pair, u64>) -> HashMap<char, u64> {
-    polymer
-        .iter()
-        .fold(HashMap::new(), |mut acc, (&(left, _), &count)| {
+    polymer.iter().fold(
+        HashMap::with_capacity(polymer.len()),
+        |mut acc, (&(left, _), &count)| {
             *acc.entry(left).or_default() += count;
             acc
-        })
+        },
+    )
 }
 
 fn expand(
@@ -58,17 +62,17 @@ fn expand(
     rules: &HashMap<Pair, char>,
 ) -> impl Iterator<Item = HashMap<Pair, u64>> + '_ {
     iter::successors(Some(initial), |initial| {
-        let next =
-            initial
-                .iter()
-                .fold(HashMap::new(), |mut acc, (&pair @ (left, right), count)| {
-                    if let Some(&middle) = rules.get(&pair) {
-                        *acc.entry((left, middle)).or_default() += count;
-                        *acc.entry((middle, right)).or_default() += count;
-                    }
+        let next = initial.iter().fold(
+            HashMap::with_capacity(initial.len()),
+            |mut acc, (&pair @ (left, right), count)| {
+                if let Some(&middle) = rules.get(&pair) {
+                    *acc.entry((left, middle)).or_default() += count;
+                    *acc.entry((middle, right)).or_default() += count;
+                }
 
-                    acc
-                });
+                acc
+            },
+        );
 
         Some(next)
     })

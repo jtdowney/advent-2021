@@ -23,11 +23,8 @@ fn generator(input: &str) -> eyre::Result<Input> {
         .skip(2)
         .map(|line| {
             let (from, to) = line.split_once(" -> ").context("unable to split rule")?;
-            let mut from_iter = from.chars();
-            let from = (
-                from_iter.next().context("unable to split from")?,
-                from_iter.next().context("unable to split from")?,
-            );
+            let from_parts = from.chars().collect::<Vec<char>>();
+            let from = (from_parts[0], from_parts[1]);
             let to = to
                 .chars()
                 .next()
@@ -42,14 +39,14 @@ fn generator(input: &str) -> eyre::Result<Input> {
 fn count_pairs(template: &[char]) -> HashMap<Pair, usize> {
     template.windows(2).fold(HashMap::new(), |mut acc, parts| {
         let pair = (parts[0], parts[1]);
-        *acc.entry(pair).or_default() += 1 as usize;
+        *acc.entry(pair).or_default() += 1;
         acc
     })
 }
 
 fn count_elements(polymer: &HashMap<Pair, usize>) -> HashMap<char, usize> {
     polymer
-        .into_iter()
+        .iter()
         .fold(HashMap::new(), |mut acc, (&(left, _), &count)| {
             *acc.entry(left).or_default() += count;
             acc
@@ -61,18 +58,21 @@ fn expand(
     rules: &HashMap<Pair, char>,
 ) -> impl Iterator<Item = HashMap<Pair, usize>> + '_ {
     iter::successors(Some(initial), |initial| {
-        let mut next = HashMap::new();
-        for (&pair @ (left, right), count) in initial {
-            if let Some(&middle) = rules.get(&pair) {
-                *next.entry((left, middle)).or_default() += count;
-                *next.entry((middle, right)).or_default() += count;
-            } else {
-                *next.entry(pair).or_default() += count;
-            }
-        }
+        let next =
+            initial
+                .iter()
+                .fold(HashMap::new(), |mut acc, (&pair @ (left, right), count)| {
+                    if let Some(&middle) = rules.get(&pair) {
+                        *acc.entry((left, middle)).or_default() += count;
+                        *acc.entry((middle, right)).or_default() += count;
+                    }
+
+                    acc
+                });
 
         Some(next)
     })
+    .skip(1)
 }
 
 fn solve(input: &Input, rounds: usize) -> eyre::Result<usize> {
@@ -84,7 +84,7 @@ fn solve(input: &Input, rounds: usize) -> eyre::Result<usize> {
 
     let initial = count_pairs(&input.template);
     let polymer = expand(initial, &input.rules)
-        .take(rounds + 1)
+        .take(rounds)
         .last()
         .context("unable to expand polymer")?;
     let mut counts = count_elements(&polymer);

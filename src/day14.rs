@@ -36,7 +36,7 @@ fn generator(input: &str) -> eyre::Result<Input> {
     Ok(Input { template, rules })
 }
 
-fn count_pairs(template: &[char]) -> HashMap<Pair, usize> {
+fn count_pairs(template: &[char]) -> HashMap<Pair, u64> {
     template.windows(2).fold(HashMap::new(), |mut acc, parts| {
         let pair = (parts[0], parts[1]);
         *acc.entry(pair).or_default() += 1;
@@ -44,7 +44,7 @@ fn count_pairs(template: &[char]) -> HashMap<Pair, usize> {
     })
 }
 
-fn count_elements(polymer: &HashMap<Pair, usize>) -> HashMap<char, usize> {
+fn count_elements(polymer: &HashMap<Pair, u64>) -> HashMap<char, u64> {
     polymer
         .iter()
         .fold(HashMap::new(), |mut acc, (&(left, _), &count)| {
@@ -54,9 +54,9 @@ fn count_elements(polymer: &HashMap<Pair, usize>) -> HashMap<char, usize> {
 }
 
 fn expand(
-    initial: HashMap<Pair, usize>,
+    initial: HashMap<Pair, u64>,
     rules: &HashMap<Pair, char>,
-) -> impl Iterator<Item = HashMap<Pair, usize>> + '_ {
+) -> impl Iterator<Item = HashMap<Pair, u64>> + '_ {
     iter::successors(Some(initial), |initial| {
         let next =
             initial
@@ -75,7 +75,7 @@ fn expand(
     .skip(1)
 }
 
-fn solve(input: &Input, rounds: usize) -> eyre::Result<usize> {
+fn solve(input: &Input, rounds: usize) -> eyre::Result<u64> {
     let last = input
         .template
         .last()
@@ -100,11 +100,11 @@ fn solve(input: &Input, rounds: usize) -> eyre::Result<usize> {
 }
 
 #[aoc(day14, part1)]
-fn part1(input: &Input) -> eyre::Result<usize> {
+fn part1(input: &Input) -> eyre::Result<u64> {
     solve(input, 10)
 }
 
 #[aoc(day14, part2)]
-fn part2(input: &Input) -> eyre::Result<usize> {
+fn part2(input: &Input) -> eyre::Result<u64> {
     solve(input, 40)
 }

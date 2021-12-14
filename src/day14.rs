@@ -39,27 +39,31 @@ fn generator(input: &str) -> eyre::Result<Input> {
     Ok(Input { template, rules })
 }
 
-fn solve(input: &Input, rounds: usize) -> eyre::Result<usize> {
-    let last = input
-        .template
-        .last()
-        .cloned()
-        .context("unable to get last element")?;
+fn count_pairs(template: &[char]) -> HashMap<Pair, usize> {
+    template.windows(2).fold(HashMap::new(), |mut acc, parts| {
+        let pair = (parts[0], parts[1]);
+        *acc.entry(pair).or_default() += 1 as usize;
+        acc
+    })
+}
 
-    let initial: HashMap<Pair, usize> =
-        input
-            .template
-            .windows(2)
-            .fold(HashMap::new(), |mut acc, parts| {
-                let pair = (parts[0], parts[1]);
-                *acc.entry(pair).or_default() += 1 as usize;
-                acc
-            });
+fn count_elements(polymer: &HashMap<Pair, usize>) -> HashMap<char, usize> {
+    polymer
+        .into_iter()
+        .fold(HashMap::new(), |mut acc, (&(left, _), &count)| {
+            *acc.entry(left).or_default() += count;
+            acc
+        })
+}
 
-    let polymer = iter::successors(Some(initial), |template| {
+fn expand(
+    initial: HashMap<Pair, usize>,
+    rules: &HashMap<Pair, char>,
+) -> impl Iterator<Item = HashMap<Pair, usize>> + '_ {
+    iter::successors(Some(initial), |initial| {
         let mut next = HashMap::new();
-        for (&pair @ (left, right), count) in template {
-            if let Some(&middle) = input.rules.get(&pair) {
+        for (&pair @ (left, right), count) in initial {
+            if let Some(&middle) = rules.get(&pair) {
                 *next.entry((left, middle)).or_default() += count;
                 *next.entry((middle, right)).or_default() += count;
             } else {
@@ -69,17 +73,21 @@ fn solve(input: &Input, rounds: usize) -> eyre::Result<usize> {
 
         Some(next)
     })
-    .take(rounds + 1)
-    .last()
-    .context("unable to find solution")?;
+}
 
-    let mut counts: HashMap<char, usize> =
-        polymer
-            .into_iter()
-            .fold(HashMap::new(), |mut acc, ((left, _), count)| {
-                *acc.entry(left).or_default() += count;
-                acc
-            });
+fn solve(input: &Input, rounds: usize) -> eyre::Result<usize> {
+    let last = input
+        .template
+        .last()
+        .cloned()
+        .context("unable to get last element")?;
+
+    let initial = count_pairs(&input.template);
+    let polymer = expand(initial, &input.rules)
+        .take(rounds + 1)
+        .last()
+        .context("unable to expand polymer")?;
+    let mut counts = count_elements(&polymer);
     *counts.entry(last).or_default() += 1;
 
     let ((_, min), (_, max)) = counts

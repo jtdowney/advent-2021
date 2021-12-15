@@ -1,4 +1,7 @@
-use std::collections::{HashMap, VecDeque};
+use std::{
+    cmp::Reverse,
+    collections::{BinaryHeap, HashMap},
+};
 
 type Point = (i16, i16);
 
@@ -21,28 +24,51 @@ fn neighbors((x, y): Point) -> impl Iterator<Item = Point> {
         .map(move |(dx, dy)| (x + dx, y + dy))
 }
 
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+struct SearchEntry {
+    point: Point,
+    score: u32,
+}
+
 fn search(grid: &HashMap<Point, u8>) -> u32 {
+    let goal = grid.keys().max().cloned().unwrap();
     let mut cost = HashMap::new();
     cost.insert((0, 0), 0);
 
-    let mut search = VecDeque::new();
-    search.push_front((0, 0));
+    let mut search = BinaryHeap::new();
+    search.push(Reverse(SearchEntry {
+        point: (0, 0),
+        score: 0,
+    }));
 
-    while let Some(point) = search.pop_front() {
-        neighbors(point)
+    while let Some(Reverse(entry)) = search.pop() {
+        if entry.point == goal {
+            break;
+        }
+
+        neighbors(entry.point)
             .filter(|n| grid.contains_key(n))
             .for_each(|neighbor| {
                 if !cost.contains_key(&neighbor)
-                    || cost[&point] + (grid[&neighbor] as u32) < cost[&neighbor]
+                    || cost[&entry.point] + (grid[&neighbor] as u32) < cost[&neighbor]
                 {
-                    cost.insert(neighbor, cost[&point] + grid[&neighbor] as u32);
-                    search.push_back(neighbor);
+                    let distance = manhatten(neighbor, goal);
+                    let neighbor_cost = cost[&entry.point] + grid[&neighbor] as u32;
+                    cost.insert(neighbor, neighbor_cost);
+
+                    search.push(Reverse(SearchEntry {
+                        point: neighbor,
+                        score: neighbor_cost + distance,
+                    }));
                 }
             })
     }
 
-    let goal = grid.keys().max().cloned().unwrap();
     cost[&goal]
+}
+
+fn manhatten((x, y): Point, (gx, gy): Point) -> u32 {
+    ((x - gx).abs() + (y - gy).abs()) as u32
 }
 
 fn expand(grid: &HashMap<Point, u8>) -> HashMap<Point, u8> {

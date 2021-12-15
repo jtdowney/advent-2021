@@ -1,5 +1,5 @@
 use std::{
-    cmp::Reverse,
+    cmp::{Ordering, Reverse},
     collections::{BinaryHeap, HashMap},
 };
 
@@ -24,10 +24,22 @@ fn neighbors((x, y): Point) -> impl Iterator<Item = Point> {
         .map(move |(dx, dy)| (x + dx, y + dy))
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 struct SearchEntry {
     point: Point,
     score: u32,
+}
+
+impl PartialOrd for SearchEntry {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.score.partial_cmp(&other.score)
+    }
+}
+
+impl Ord for SearchEntry {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.score.cmp(&other.score)
+    }
 }
 
 fn search(grid: &HashMap<Point, u8>) -> u32 {

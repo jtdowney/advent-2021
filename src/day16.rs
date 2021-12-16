@@ -65,30 +65,24 @@ fn header(input: BitSlice) -> IResult<BitSlice, PacketHeader> {
 }
 
 fn variable_length_value(input: BitSlice) -> IResult<BitSlice, u64> {
-    let value_done = |input| tag(0, 1usize)(input);
-    let value_continue = |input| tag(1, 1usize)(input);
-
     let nibble = |input| take::<_, u8, _, _>(4usize)(input);
-    let nibbles = move |input| {
-        map(
-            many_till(
-                preceded(value_continue, nibble),
-                preceded(value_done, nibble),
-            ),
-            |(mut parts, part)| {
-                parts.push(part);
-                parts
-            },
-        )(input)
-    };
+    let (input, nibbles) = map(
+        many_till(
+            preceded(tag(1, 1usize), nibble),
+            preceded(tag(0, 1usize), nibble),
+        ),
+        |(mut parts, part)| {
+            parts.push(part);
+            parts
+        },
+    )(input)?;
 
-    let (input, values) = nibbles(input)?;
-    let value = values
+    let value = nibbles
         .iter()
         .rev()
         .enumerate()
-        .fold(0, |acc, (offset, &part)| {
-            acc | (part as u64) << (offset * 4)
+        .fold(0, |acc, (offset, &nibble)| {
+            acc | (nibble as u64) << (offset * 4)
         });
 
     Ok((input, value))

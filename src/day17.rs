@@ -1,7 +1,7 @@
 use eyre::ContextCompat;
 use itertools::iproduct;
 use regex::Regex;
-use std::cmp::Ordering;
+use std::{cmp::Ordering, iter};
 
 type Pair = (i16, i16);
 
@@ -29,25 +29,26 @@ struct Probe {
 }
 
 fn simulate(starting_velocity: Pair) -> impl Iterator<Item = Pair> {
-    (0..).scan(
-        Probe {
+    iter::successors(
+        Some(Probe {
             position: (0, 0),
             velocity: starting_velocity,
-        },
-        |probe, _| {
+        }),
+        |probe| {
             let (x, y) = probe.position;
             let (vx, vy) = probe.velocity;
 
-            probe.position = (x + vx, y + vy);
-            probe.velocity = match vx.cmp(&0) {
+            let position = (x + vx, y + vy);
+            let velocity = match vx.cmp(&0) {
                 Ordering::Less => (vx + 1, vy - 1),
                 Ordering::Equal => (0, vy - 1),
                 Ordering::Greater => (vx - 1, vy - 1),
             };
 
-            Some(probe.position)
+            Some(Probe { position, velocity })
         },
     )
+    .map(|probe| probe.position)
 }
 
 #[aoc_generator(day17)]

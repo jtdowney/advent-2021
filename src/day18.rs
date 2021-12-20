@@ -102,7 +102,6 @@ struct ParserState {
     current_depth: u8,
     values: Vec<u8>,
     depths: Vec<u8>,
-    number_offset: Option<usize>,
 }
 
 impl From<ParserState> for SnailNumber {
@@ -115,38 +114,20 @@ impl FromStr for SnailNumber {
     type Err = eyre::Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let state =
-            s.bytes()
-                .enumerate()
-                .try_fold(ParserState::default(), |mut state, (offset, b)| {
-                    match b {
-                        b'[' => state.current_depth += 1,
-                        b']' => {
-                            if let Some(start) = state.number_offset.take() {
-                                let value = s[start..offset].parse()?;
-                                state.values.push(value);
-                                state.depths.push(state.current_depth);
-                            }
+        let state = s.chars().try_fold(ParserState::default(), |mut state, c| {
+            match c {
+                '[' => state.current_depth += 1,
+                ']' => state.current_depth -= 1,
+                ',' => {}
+                c if c.is_ascii_digit() => {
+                    state.values.push(c.to_digit(10).unwrap() as u8);
+                    state.depths.push(state.current_depth);
+                }
+                _ => bail!("unexpected {}", c),
+            }
 
-                            state.current_depth -= 1;
-                        }
-                        b',' => {
-                            if let Some(start) = state.number_offset.take() {
-                                let value = s[start..offset].parse()?;
-                                state.values.push(value);
-                                state.depths.push(state.current_depth);
-                            }
-                        }
-                        b if b.is_ascii_digit() => {
-                            if state.number_offset.is_none() {
-                                state.number_offset = Some(offset);
-                            }
-                        }
-                        _ => bail!("unexpected {}", b),
-                    }
-
-                    Ok(state)
-                })?;
+            Ok(state)
+        })?;
 
         Ok(state.into())
     }

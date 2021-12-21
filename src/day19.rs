@@ -3,7 +3,7 @@ use itertools::{iproduct, Itertools};
 use nalgebra::{point, Matrix4, Point3, Transform3, Vector3};
 use std::collections::{HashMap, HashSet, VecDeque};
 
-type Point = Point3<f32>;
+type Point = Point3<f64>;
 
 #[derive(Debug, Default, Clone)]
 struct Scanner {
@@ -12,7 +12,7 @@ struct Scanner {
 }
 
 impl Scanner {
-    fn find_transform(&self, other: &Scanner) -> Option<Transform3<f32>> {
+    fn find_transform(&self, other: &Scanner) -> Option<Transform3<f64>> {
         let overlaps = self.overlaps(other).take(4).collect::<Vec<_>>();
         if overlaps.len() < 4 {
             return None;
@@ -93,7 +93,7 @@ impl FromIterator<Point> for Scanner {
 
 struct Input {
     scanners: Vec<Scanner>,
-    transforms: Vec<Transform3<f32>>,
+    transforms: Vec<Transform3<f64>>,
 }
 
 #[aoc_generator(day19)]

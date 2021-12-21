@@ -65,29 +65,29 @@ type Cache = HashMap<(PlayerState, PlayerState), (usize, usize)>;
 const FREQUENCIES: [(u8, usize); 7] = [(3, 1), (4, 3), (5, 6), (6, 7), (7, 6), (8, 3), (9, 1)];
 
 fn solve_quantum(
-    players @ (player1, player2): (PlayerState, PlayerState),
+    players @ (active, other): (PlayerState, PlayerState),
     cache: &mut Cache,
 ) -> (usize, usize) {
     if let Some(&scores) = cache.get(&players) {
         return scores;
     }
 
-    if player1.score >= 21 {
+    if active.score >= 21 {
         return (1, 0);
-    } else if player2.score >= 21 {
+    } else if other.score >= 21 {
         return (0, 1);
     }
 
     let mut scores = [0; 2];
     for (roll, frequency) in FREQUENCIES {
-        let position = 1 + (player1.position + roll - 1) % 10;
-        let score = player1.score + position;
-        let player1 = PlayerState { score, position };
+        let position = 1 + (active.position + roll - 1) % 10;
+        let score = active.score + position;
+        let next = PlayerState { score, position };
 
-        let (player2_wins, player1_wins) = solve_quantum((player2, player1), cache);
+        let (other_wins, active_wins) = solve_quantum((other, next), cache);
 
-        scores[0] += player1_wins * frequency;
-        scores[1] += player2_wins * frequency;
+        scores[0] += active_wins * frequency;
+        scores[1] += other_wins * frequency;
     }
 
     let score_tuple = (scores[0], scores[1]);
